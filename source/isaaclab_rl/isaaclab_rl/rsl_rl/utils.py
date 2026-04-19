@@ -86,6 +86,9 @@ def handle_deprecated_rsl_rl_cfg(agent_cfg: RslRlBaseRunnerCfg, installed_versio
                 RslRlPpoActorCriticCfg,
                 RslRlPpoActorCriticRecurrentCfg,
                 RslRlRNNModelCfg,
+                RslRlSacActorCriticCfg,
+                RslRlSacActorModelCfg,
+                RslRlSacCriticModelCfg,
             )
 
             # set actor model configuration if missing
@@ -181,21 +184,51 @@ def handle_deprecated_rsl_rl_cfg(agent_cfg: RslRlBaseRunnerCfg, installed_versio
                         rnn_num_layers=agent_cfg.policy.rnn_num_layers,
                     )
 
+            # set SAC actor model configuration if missing
+            if hasattr(agent_cfg, "actor") and _is_missing(agent_cfg.actor):
+                if type(agent_cfg.policy) is RslRlSacActorCriticCfg:
+                    print("[WARNING]: The `policy` configuration is used to infer the SAC "
+                          "`actor` model configuration.")
+                    agent_cfg.actor = RslRlSacActorModelCfg(
+                        hidden_dims=agent_cfg.policy.actor_hidden_dims,
+                        activation=agent_cfg.policy.activation,
+                        obs_normalization=agent_cfg.policy.actor_obs_normalization,
+                        init_noise_std=agent_cfg.policy.init_noise_std,
+                        layer_norm=agent_cfg.policy.layer_norm,
+                    )
+            # set SAC critic model configuration if missing
+            if hasattr(agent_cfg, "critic") and _is_missing(agent_cfg.critic):
+                if type(agent_cfg.policy) is RslRlSacActorCriticCfg:
+                    print("[WARNING]: The `policy` configuration is used to infer the SAC "
+                          "`critic` model configuration.")
+                    agent_cfg.critic = RslRlSacCriticModelCfg(
+                        hidden_dims=agent_cfg.policy.critic_hidden_dims,
+                        activation=agent_cfg.policy.activation,
+                        obs_normalization=agent_cfg.policy.critic_obs_normalization,
+                        layer_norm=agent_cfg.policy.layer_norm,
+                    )
+
             # remove deprecated policy configuration
             agent_cfg.policy = MISSING
 
         # Handle new distribution configuration
+        # Note: SAC model configs (RslRlSacActorModelCfg, RslRlSacCriticModelCfg) do not use the
+        # stochastic/distribution_cfg parameter system — skip them.
         if installed_version < _V5_0_0:
             for model_name in _MODEL_CFG_NAMES:
                 if _has_non_missing_attr(agent_cfg, model_name):
-                    _validate_old_stochastic_cfg(getattr(agent_cfg, model_name))
+                    model_cfg = getattr(agent_cfg, model_name)
+                    if hasattr(model_cfg, "stochastic") or hasattr(model_cfg, "distribution_cfg"):
+                        _validate_old_stochastic_cfg(model_cfg)
         else:  # rsl-rl >= 5.0.0
             # import new distribution config classes
             from isaaclab_rl.rsl_rl import RslRlMLPModelCfg
 
             for model_name in _MODEL_CFG_NAMES:
                 if _has_non_missing_attr(agent_cfg, model_name):
-                    _update_distribution_cfg(getattr(agent_cfg, model_name), RslRlMLPModelCfg)
+                    model_cfg = getattr(agent_cfg, model_name)
+                    if hasattr(model_cfg, "stochastic") or hasattr(model_cfg, "distribution_cfg"):
+                        _update_distribution_cfg(model_cfg, RslRlMLPModelCfg)
 
     return agent_cfg
 

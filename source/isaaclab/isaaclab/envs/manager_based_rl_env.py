@@ -6,6 +6,7 @@
 # needed to import for allowing type-hinting: np.ndarray | None
 from __future__ import annotations
 
+import copy
 import math
 from collections.abc import Sequence
 from typing import Any, ClassVar
@@ -204,16 +205,19 @@ class ManagerBasedRLEnv(ManagerBasedEnv, gym.Env):
         self.reset_buf = self.termination_manager.compute()
         self.reset_terminated = self.termination_manager.terminated
         self.reset_time_outs = self.termination_manager.time_outs
+        reset_env_ids = self.reset_buf.nonzero(as_tuple=False).squeeze(-1)
         # -- reward computation
         self.reward_buf = self.reward_manager.compute(dt=self.step_dt)
 
-        if len(self.recorder_manager.active_terms) > 0:
+        if len(self.recorder_manager.active_terms) > 0 or len(reset_env_ids) > 0:
             # update observations for recording if needed
             self.obs_buf = self.observation_manager.compute()
             self.recorder_manager.record_post_step()
 
+            # store observations in extras before reset
+            self.extras["time_outs_obs"] = copy.deepcopy(self.obs_buf)
+
         # -- reset envs that terminated/timed-out and log the episode information
-        reset_env_ids = self.reset_buf.nonzero(as_tuple=False).squeeze(-1)
         if len(reset_env_ids) > 0:
             # trigger recorder terms for pre-reset calls
             self.recorder_manager.record_pre_reset(reset_env_ids)

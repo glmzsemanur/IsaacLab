@@ -160,6 +160,8 @@ class RslRlVecEnvWrapper(VecEnv):
         # this is only needed for infinite horizon tasks
         if not self.unwrapped.cfg.is_finite_horizon:
             extras["time_outs"] = truncated
+            if "time_outs_obs" in extras:
+                extras["time_outs_obs"] = TensorDict(extras["time_outs_obs"], batch_size=[self.num_envs])
         # return the step information
         return TensorDict(obs_dict, batch_size=[self.num_envs]), rew, dones, extras
 

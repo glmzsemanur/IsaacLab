@@ -111,6 +111,55 @@ class RslRlRNNModelCfg(RslRlMLPModelCfg):
 
 
 @configclass
+class RslRlSacActorModelCfg:
+    """Configuration for the SAC actor model."""
+
+    class_name: str = "SACActorModel"
+    """The model class name. Default is SACActorModel."""
+
+    hidden_dims: list[int] = MISSING
+    """The hidden dimensions of the actor MLP network."""
+
+    activation: str = MISSING
+    """The activation function for the actor MLP network."""
+
+    obs_normalization: bool = MISSING
+    """Whether to normalize the observation for the actor model."""
+
+    init_noise_std: float = MISSING
+    """Initial standard deviation for the log-std output head."""
+
+    layer_norm: bool = MISSING
+    """Whether to apply layer normalization in MLP hidden layers."""
+
+    log_std_min: float = MISSING
+    """Minimum value for log standard deviation clamping."""
+
+    log_std_max: float = MISSING
+    """Maximum value for log standard deviation clamping."""
+
+
+@configclass
+class RslRlSacCriticModelCfg:
+    """Configuration for the SAC critic model."""
+
+    class_name: str = "SACCriticModel"
+    """The model class name. Default is SACCriticModel."""
+
+    hidden_dims: list[int] = MISSING
+    """The hidden dimensions of the critic MLP networks."""
+
+    activation: str = MISSING
+    """The activation function for the critic MLP networks."""
+
+    obs_normalization: bool = MISSING
+    """Whether to normalize the observation for the critic model."""
+
+    layer_norm: bool = MISSING
+    """Whether to apply layer normalization in MLP hidden layers."""
+
+
+@configclass
 class RslRlCNNModelCfg(RslRlMLPModelCfg):
     """Configuration for CNN model."""
 
@@ -219,6 +268,71 @@ class RslRlPpoAlgorithmCfg:
 
     symmetry_cfg: RslRlSymmetryCfg | None = None
     """The symmetry configuration. Defaults to None, in which case symmetry is not used."""
+
+
+@configclass
+class RslRlSacAlgorithmCfg:
+    """Configuration for the SAC algorithm."""
+
+    class_name: str = "SAC"
+    """The algorithm class name. Default is SAC."""
+
+    replay_buffer_size: int = MISSING
+    """Maximum number of transitions in the replay buffer."""
+
+    num_learning_epochs: int = MISSING
+    """Number of gradient epochs per update step."""
+
+    num_mini_batches: int = MISSING
+    """Number of mini-batches sampled per epoch."""
+
+    mini_batch_size: int = MISSING
+    """Mini-batch size drawn from the replay buffer."""
+
+    actor_learning_rate: float = MISSING
+    """Learning rate for the actor parameters."""
+
+    critic_learning_rate: float = MISSING
+    """Learning rate for the critic parameters."""
+
+    alpha_learning_rate: float = MISSING
+    """Learning rate for the temperature parameter."""
+
+    gamma: float = MISSING
+    """The discount factor."""
+
+    tau: float = MISSING
+    """The soft update coefficient."""
+
+    alpha: float = MISSING
+    """The temperature parameter."""
+
+    auto_alpha: bool = MISSING
+    """Whether to use automatic entropy tuning."""
+
+    target_entropy_scale: float = 1.0
+    """Scale factor for target entropy. Computed as target_entropy = -scale * action_dim."""
+
+    max_grad_norm: float = MISSING
+    """Gradient clipping threshold."""
+
+    policy_frequency: int = MISSING
+    """Frequency of policy updates relative to critic updates."""
+
+    n_steps: int = MISSING
+    """Number of steps for n-step returns."""
+
+    actor_optimizer: Literal["adam", "adamw", "sgd", "rmsprop"] = "adam"
+    """The optimizer for the actor. Defaults to adam."""
+
+    critic_optimizer: Literal["adam", "adamw", "sgd", "rmsprop"] = "adam"
+    """The optimizer for the critic. Defaults to adam."""
+
+    rnd_cfg: RslRlRndCfg | None = None
+    """The RND configuration. Default is None, in which case RND is not used."""
+
+    symmetry_cfg: RslRlSymmetryCfg | None = None
+    """Optional symmetry augmentation configuration."""
 
 
 #########################
@@ -347,6 +461,36 @@ class RslRlOnPolicyRunnerCfg(RslRlBaseRunnerCfg):
     """
 
 
+@configclass
+class RslRlOffPolicyRunnerCfg(RslRlBaseRunnerCfg):
+    """Configuration of the runner for off-policy algorithms."""
+
+    class_name: str = "OffPolicyRunner"
+    """The runner class name. Default is OffPolicyRunner."""
+
+    actor: RslRlSacActorModelCfg = MISSING
+    """The actor model configuration."""
+
+    critic: RslRlSacCriticModelCfg = MISSING
+    """The critic model configuration."""
+
+    algorithm: RslRlSacAlgorithmCfg = MISSING
+    """The algorithm configuration."""
+
+    log_interval: int = MISSING
+    """The number of iterations between logging the training statistics."""
+
+    start_training: int = MISSING
+    """Number of iterations before start training."""
+
+    policy: RslRlSacActorCriticCfg = MISSING
+    """The policy configuration.
+
+    For rsl-rl >= 4.0.0, this configuration is deprecated. Please use ``actor`` and ``critic`` model
+    configurations instead.
+    """
+
+
 #############################
 # Deprecated configurations #
 #############################
@@ -405,3 +549,36 @@ class RslRlPpoActorCriticRecurrentCfg(RslRlPpoActorCriticCfg):
 
     rnn_num_layers: int = MISSING
     """The number of RNN layers."""
+
+
+@configclass
+class RslRlSacActorCriticCfg:
+    """Configuration for the SAC actor-critic networks.
+
+    For rsl-rl >= 4.0.0, this configuration is deprecated. Please use ``RslRlSacActorModelCfg`` and
+    ``RslRlSacCriticModelCfg`` instead.
+    """
+
+    class_name: str = "ActorCriticSAC"
+    """The policy class name. Default is ActorCriticSAC."""
+
+    actor_obs_normalization: bool = MISSING
+    """Whether to normalize the observation for the actor network."""
+
+    critic_obs_normalization: bool = MISSING
+    """Whether to normalize the observation for the critic network."""
+
+    actor_hidden_dims: list[int] = MISSING
+    """The hidden dimensions of the actor network."""
+
+    critic_hidden_dims: list[int] = MISSING
+    """The hidden dimensions of the critic network."""
+
+    activation: str = MISSING
+    """The activation function for the actor and critic networks."""
+
+    layer_norm: bool = MISSING
+    """Whether to apply layer normalization in actor and critic MLP hidden layers."""
+
+    init_noise_std: float = MISSING
+    """Initial standard deviation for stochastic policy head."""

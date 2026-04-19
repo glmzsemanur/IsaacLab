@@ -51,6 +51,9 @@ x-default-isaac-lab-volumes: &default-isaac-lab-volumes
   - type: bind
     source: ../tools
     target: ${DOCKER_ISAACLAB_PATH}/tools
+  - type: bind
+    source: ../../rsl_rl_sac
+    target: ${DOCKER_RSL_RL_PATH}
     # The effect of these volumes is twofold:
     # 1. Prevent root-owned files from flooding the _build and logs dir
     #    on the host machine
@@ -95,7 +98,10 @@ services:
         - ISAACSIM_VERSION_ARG=${ISAACSIM_VERSION}
         - ISAACSIM_ROOT_PATH_ARG=${DOCKER_ISAACSIM_ROOT_PATH}
         - ISAACLAB_PATH_ARG=${DOCKER_ISAACLAB_PATH}
+        - RSL_RL_PATH_ARG=${DOCKER_RSL_RL_PATH}
         - DOCKER_USER_HOME_ARG=${DOCKER_USER_HOME}
+      additional_contexts:
+        rsl_rl_ctx: ../../rsl_rl_sac
     image: isaac-lab-base${DOCKER_NAME_SUFFIX-}
     container_name: isaac-lab-base${DOCKER_NAME_SUFFIX-}
     environment: *default-isaac-lab-environment
