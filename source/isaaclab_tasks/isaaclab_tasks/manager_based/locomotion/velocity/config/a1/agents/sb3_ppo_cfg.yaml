@@ -26,3 +26,6 @@ max_grad_norm: 1.0
 normalize_input: True
 normalize_value: False
 clip_obs: 10.0
+
+n_timesteps: 150_000_000
+checkpoint_interval: 1_000_000_000

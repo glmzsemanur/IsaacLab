@@ -1,16 +1,3 @@
-# Copyright (c) 2022-2026, The Isaac Lab Project Developers (https://github.com/isaac-sim/IsaacLab/blob/main/CONTRIBUTORS.md).
-# All rights reserved.
-#
-# SPDX-License-Identifier: BSD-3-Clause
-
-"""
-Script to train RL agent with skrl.
-
-Visit the skrl documentation (https://skrl.readthedocs.io) to see the examples structured in
-a more user-friendly way.
-"""
-
-"""Launch Isaac Sim Simulator first."""
 
 import argparse
 import sys
@@ -220,17 +207,56 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
 
     # wrap around environment for skrl
     env = SkrlVecEnvWrapper(env, ml_framework=args_cli.ml_framework)  # same as: `wrap_env(env, wrapper="auto")`
-
+    
     # configure and instantiate the skrl runner
     # https://skrl.readthedocs.io/en/latest/api/utils/runner.html
+    import numpy as np
+    # 2. MANUALLY OVERRIDE THE BOUNDS (CRITICAL FOR SAC)
+    # Replace 12 and 48 with your actual dimensions if they differ
+    env.unwrapped.single_action_space = gym.spaces.Box(
+        low=-1.0, high=1.0, shape=(12,), dtype=np.float32
+    )
+    env.unwrapped.single_observation_space = gym.spaces.Dict({
+        "policy": gym.spaces.Box(low=-5.0, high=5.0, shape=(48,), dtype=np.float32)
+    })
+    import ipdb; ipdb.set_trace()
+    import torch
     runner = Runner(env, agent_cfg)
+
+    # 1. Access the internal TensorBoard writer directly
+    # This writer is usually created when the agent is initialized
+    writer = runner.agent.writer 
+
+    # 2. Patch record_transition with a FORCE FLUSH
+    original_record_transition = runner.agent.record_transition
+
+    def patched_record_transition(*args, **kwargs):
+        # SAC call: record_transition(states, actions, rewards, next_states, ...)
+        actions = kwargs.get('actions', args[1] if len(args) > 1 else None)
+        timestep = kwargs.get('timestep', args[7] if len(args) > 7 else 0)
+
+        if actions is not None and writer is not None:
+            # We use the raw writer to ensure the data is recorded NOW
+            writer.add_scalar("Actions/Action_Max", torch.max(actions).item(), timestep)
+            writer.add_scalar("Actions/Action_Min", torch.min(actions).item(), timestep)
+            writer.add_scalar("Actions/Action_Mean_Abs", torch.mean(torch.abs(actions)).item(), timestep)
+            
+            # Flush every 10 steps to ensure we see the "crash" data
+            if timestep % 10 == 0:
+                writer.flush()
+
+        return original_record_transition(*args, **kwargs)
+
+    runner.agent.record_transition = patched_record_transition
+
+    # 3. SET THE WRITE INTERVAL TO 1 (Strictly for debugging)
+    # This forces skrl to be extremely aggressive with logging
+    runner.agent.cfg["experiment"]["write_interval"] = 1 
 
     # load checkpoint (if specified)
     if resume_path:
-        print(f"[INFO] Loading model checkpoint from: {resume_path}")
         runner.agent.load(resume_path)
 
-    # run training
     runner.run()
 
     print(f"Training time: {round(time.time() - start_time, 2)} seconds")

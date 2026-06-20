@@ -10,11 +10,18 @@ from isaaclab_tasks.manager_based.locomotion.velocity.velocity_env_cfg import Lo
 ##
 # Pre-defined configs
 ##
-from isaaclab_assets.robots.unitree import UNITREE_GO2_CFG  # isort: skip
-
+# from isaaclab_assets.robots.unitree import UNITREE_GO2_CFG  # isort: skip
+from robot_lab.assets.unitree import UNITREE_GO2_CFG  # isort: skip
+ 
 
 @configclass
 class UnitreeGo2RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
+    joint_names = [
+        "FR_hip_joint", "FR_thigh_joint", "FR_calf_joint",
+        "FL_hip_joint", "FL_thigh_joint", "FL_calf_joint",
+        "RR_hip_joint", "RR_thigh_joint", "RR_calf_joint",
+        "RL_hip_joint", "RL_thigh_joint", "RL_calf_joint",
+    ]
     def __post_init__(self):
         # post init of parent
         super().__post_init__()
@@ -26,8 +33,20 @@ class UnitreeGo2RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.scene.terrain.terrain_generator.sub_terrains["random_rough"].noise_range = (0.01, 0.06)
         self.scene.terrain.terrain_generator.sub_terrains["random_rough"].noise_step = 0.01
 
+        self.observations.policy.joint_pos.params["asset_cfg"].joint_names = self.joint_names
+        self.observations.policy.joint_vel.params["asset_cfg"].joint_names = self.joint_names
+        self.observations.policy.base_lin_vel = None
+        self.observations.policy.height_scan = None
+        self.observations.policy.joint_pos.params["asset_cfg"].preserve_order = True
+        self.observations.policy.joint_vel.params["asset_cfg"].preserve_order = True
+        self.observations.critic.joint_pos.params["asset_cfg"].preserve_order = True
+        self.observations.critic.joint_vel.params["asset_cfg"].preserve_order = True
+        
+
         # reduce action scale
         self.actions.joint_pos.scale = 0.25
+        self.actions.joint_pos.joint_names = self.joint_names
+        self.actions.joint_pos.preserve_order = True
 
         # event
         self.events.push_robot = None
@@ -36,7 +55,7 @@ class UnitreeGo2RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.events.base_external_force_torque.params["asset_cfg"].body_names = "base"
         self.events.reset_robot_joints.params["position_range"] = (1.0, 1.0)
         self.events.reset_base.params = {
-            "pose_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5), "yaw": (-3.14, 3.14)},
+            "pose_range": {"x": (0, 0), "y": (0, 0), "yaw": (0, 0)},
             "velocity_range": {
                 "x": (0.0, 0.0),
                 "y": (0.0, 0.0),
@@ -51,11 +70,12 @@ class UnitreeGo2RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
         # rewards
         self.rewards.feet_air_time.params["sensor_cfg"].body_names = ".*_foot"
         self.rewards.feet_air_time.weight = 0.01
-        self.rewards.undesired_contacts = None
+        # self.rewards.undesired_contacts = None
         self.rewards.dof_torques_l2.weight = -0.0002
         self.rewards.track_lin_vel_xy_exp.weight = 1.5
         self.rewards.track_ang_vel_z_exp.weight = 0.75
         self.rewards.dof_acc_l2.weight = -2.5e-7
+        self.rewards.undesired_contacts.params["sensor_cfg"].body_names = [f"^(?!.*foot).*"]
 
         # terminations
         self.terminations.base_contact.params["sensor_cfg"].body_names = "base"

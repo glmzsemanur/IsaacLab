@@ -1,13 +1,5 @@
-# Copyright (c) 2022-2026, The Isaac Lab Project Developers (https://github.com/isaac-sim/IsaacLab/blob/main/CONTRIBUTORS.md).
-# All rights reserved.
-#
-# SPDX-License-Identifier: BSD-3-Clause
-
 seed: 42
 
-
-# Models are instantiated using skrl's model instantiator utility
-# https://skrl.readthedocs.io/en/latest/api/utils/model_instantiators.html
 models:
   separate: True
   policy:  # see gaussian_model parameters
@@ -77,9 +69,9 @@ agent:
 
   discount_factor: 0.99        # discount factor (gamma)
   polyak: 0.005                # soft update hyperparameter (tau)
-
-  actor_learning_rate: 1.0e-3    # actor learning rate
-  critic_learning_rate: 1.0e-3   # critic learning rate
+  
+  actor_learning_rate: 1.0e-4    # actor learning rate
+  critic_learning_rate: 1.0e-4   # critic learning rate
   learning_rate_scheduler: None        # learning rate scheduler class (see torch.optim.lr_scheduler)
   learning_rate_scheduler_kwargs: {}   # learning rate scheduler's kwargs (e.g. {"step_size": 1e-3})
 
@@ -89,23 +81,23 @@ agent:
 
   random_timesteps: 0          # random exploration steps
   learning_starts: 1000           # learning starts after this many steps
-  grad_norm_clip: 1.0            # clipping coefficient for the norm of the gradients
+  grad_norm_clip: 0.07            # clipping coefficient for the norm of the gradients
   learn_entropy: True          # learn entropy
   entropy_learning_rate: 1.0e-3  # entropy learning rate
-  initial_entropy_value: 0.2   # initial entropy value
+  initial_entropy_value: 0.01   # initial entropy value
   target_entropy: null         # target entropy
   rewards_shaper: None         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
   mixed_precision: False       # enable automatic mixed precision for higher performance
   experiment: 
-    directory: "unitree_a1_flat_sac"            # experiment's parent directory
+    directory: "unitree_a1_flat_sac_morning_optuna"            # experiment's parent directory
     experiment_name: ""      # experiment name
     write_interval: 100   # TensorBoard writing interval (timesteps)
     checkpoint_interval: 2000      # interval for checkpoints (timesteps)
     store_separately: True          # whether to store checkpoints separately
     wandb: True             # whether to use Weights & Biases
     wandb_kwargs:
-      project: "A1_Isaac_sac"
-      name: "default_sac"        # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
+      project: "optuna_sac_morning"
+      name: "optuna_sac_morning"        # wandb kwargs (see https://docs.wandb.ai/ref/python/init)
 
 # Sequential trainer
 # https://skrl.readthedocs.io/en/latest/api/trainers/sequential.html

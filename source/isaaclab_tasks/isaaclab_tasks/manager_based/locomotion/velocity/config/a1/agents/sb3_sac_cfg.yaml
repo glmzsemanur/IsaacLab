@@ -1,0 +1,67 @@
+# Copyright (c) 2022-2026, The Isaac Lab Project Developers (https://github.com/isaac-sim/IsaacLab/blob/main/CONTRIBUTORS.md).
+# All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+# Adapted from rsl_rl config
+
+## SBX-SAC default
+# seed: 42
+# n_timesteps: !!float 5e7
+# policy: 'MlpPolicy'
+# policy_kwargs:
+#   activation_fn: 'nn.ELU'
+#   net_arch: [512, 256, 128]
+
+## SBX-SACT tuned for A1 velocity task
+# seed: 42
+# n_timesteps: !!float 5e7
+# policy: 'MlpPolicy'
+# policy_kwargs:
+#   activation_fn: 'nn.ELU'
+#   net_arch: [512, 256, 128]
+# batch_size: 512
+# buffer_size: 2_000_000
+# ent_coef: auto_0.009471776840423638
+# gamma: 0.983100250213744
+# gradient_steps: 32
+# learning_rate: 0.00044689099625712413
+# learning_starts: 2000
+# policy: MlpPolicy
+# policy_delay: 8
+# policy_kwargs:
+#   net_arch: [512, 256, 128]
+#   activation_fn: 'nn.ELU'
+#   optimizer_class: 'optax.adamw'
+#   layer_norm: true
+# tau: 0.0023055560568780655
+# train_freq: 1 
+
+## SBX-SACT+ tuned for A1 velocity task
+seed: 42
+n_timesteps: !!float 5e7
+policy: 'MlpPolicy'
+policy_kwargs:
+  activation_fn: 'nn.ELU'
+  net_arch: [512, 256, 128]
+batch_size: 512
+buffer_size: 2_000_000
+ent_coef: auto_0.009471776840423638
+gamma: 0.983100250213744
+learning_rate: 0.00044689099625712413
+learning_starts: 2000
+policy: MlpPolicy
+policy_delay: 8
+policy_kwargs:
+  net_arch: [512, 256, 128]
+  activation_fn: 'nn.ELU'
+  optimizer_class: 'optax.adamw'
+  layer_norm: true
+tau: 0.0023055560568780655
+train_freq: 10
+gradient_steps: 320 
+use_sde: True
+n_steps: 3
+
+n_timesteps: 50_000_000
+checkpoint_interval: 1_000_000_000
