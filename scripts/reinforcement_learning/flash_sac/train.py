@@ -43,7 +43,6 @@ from omegaconf import OmegaConf
 
 from flash_rl.agents import create_agent
 from flash_rl.common import create_logger
-from flash_rl.evaluation import evaluate, record_video
 from flash_rl.types import Tensor
 import flash_rl.agents as _flash_rl_agents
 
@@ -91,9 +90,6 @@ def main():
         action_bounds=cfg.env.get("action_bounds", None),
         simulation_app=simulation_app,
     )
-    eval_env = train_env
-    record_env = train_env
-
     _, env_info = train_env.reset()
     agent = create_agent(
         observation_space=train_env.observation_space,
@@ -111,13 +107,6 @@ def main():
         agent.load(os.path.abspath(cfg.agent_load_path))
     if cfg.buffer_load_path is not None:
         agent.load_replay_buffer(os.path.abspath(cfg.buffer_load_path))
-
-    eval_info = evaluate(agent, eval_env, cfg.num_eval_episodes, cfg.env.env_type)
-    video_info = record_video(agent, record_env, cfg.num_record_episodes, cfg.env.env_type)
-    logger.update_metric(**eval_info)
-    logger.update_metric(**video_info)
-    logger.log_metric(step=0)
-    logger.reset()
 
     observations, env_infos = train_env.reset()
     actions: Optional[Tensor] = None
@@ -161,17 +150,9 @@ def main():
                 logger.update_metric(**update_info)
                 update_counter -= 1
 
-            if cfg.evaluation_per_interaction_step and interaction_step % cfg.evaluation_per_interaction_step == 0:
-                eval_info = evaluate(agent, eval_env, cfg.num_eval_episodes, cfg.env.env_type)
-                logger.update_metric(**eval_info)
-
             if cfg.metrics_per_interaction_step and interaction_step % cfg.metrics_per_interaction_step == 0:
                 metrics_info = agent.get_metrics()
                 logger.update_metric(**metrics_info)
-
-            if cfg.recording_per_interaction_step and interaction_step % cfg.recording_per_interaction_step == 0:
-                video_info = record_video(agent, record_env, cfg.num_record_episodes, cfg.env.env_type)
-                logger.update_metric(**video_info)
 
             if cfg.logging_per_interaction_step and interaction_step % cfg.logging_per_interaction_step == 0:
                 logger.log_metric(step=env_step)
@@ -186,10 +167,6 @@ def main():
             if cfg.save_buffer_per_interaction_step and interaction_step % cfg.save_buffer_per_interaction_step == 0:
                 agent.save_replay_buffer(os.path.join(save_path_base, f"step{interaction_step}"))
 
-    eval_info = evaluate(agent, eval_env, cfg.num_eval_episodes, cfg.env.env_type)
-    video_info = record_video(agent, record_env, cfg.num_record_episodes, cfg.env.env_type)
-    logger.update_metric(**eval_info)
-    logger.update_metric(**video_info)
     logger.log_metric(step=env_step)
     logger.reset()
 
