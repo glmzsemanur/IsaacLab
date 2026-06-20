@@ -34,13 +34,13 @@ import numpy as np
 import torch
 from omegaconf import OmegaConf
 
-import flash_rl
 from flash_rl.agents import create_agent
 from flash_rl.types import Tensor
+import flash_rl.agents as _flash_rl_agents
 
 from env_wrapper import make_isaaclab_env  # isort: skip
 
-FLASH_RL_CONFIG_PATH = str(Path(flash_rl.__file__).parent.parent / "configs")
+FLASH_RL_CONFIG_PATH = str(Path(_flash_rl_agents.__file__).parent.parent.parent / "configs")
 
 
 def main():
