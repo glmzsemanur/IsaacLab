@@ -19,7 +19,7 @@ parser = argparse.ArgumentParser(description="Train a FlashSAC agent in an Isaac
 parser.add_argument("--task", type=str, required=True, help="IsaacLab task name (e.g. Isaac-Velocity-Flat-Unitree-A1-v0).")
 parser.add_argument("--num_envs", type=int, default=1024, help="Number of parallel training environments.")
 parser.add_argument("--seed", type=int, default=42, help="Random seed.")
-parser.add_argument("--max_steps", type=int, default=None, help="Override total environment interaction steps.")
+parser.add_argument("--max_steps", type=int, default=50_000_000, help="Override total environment interaction steps.")
 parser.add_argument("--config_name", type=str, default="flashSAC_base", help="FlashSAC hydra config name.")
 parser.add_argument("--overrides", action="append", default=[], metavar="KEY=VALUE", help="Hydra config overrides.")
 AppLauncher.add_app_launcher_args(parser)
@@ -63,6 +63,11 @@ def main():
         "num_eval_envs=null",
         "num_record_envs=null",
         f"seed={args_cli.seed}",
+        # IsaacLab GPU-sim defaults from run_isaaclab.sh
+        "agent.buffer_max_length=10_000_000",
+        "agent.buffer_min_length=100_000",
+        "updates_per_interaction_step=2",
+        "n_step=3",
     ]
     if args_cli.max_steps is not None:
         overrides.append(f"num_env_steps={args_cli.max_steps}")
